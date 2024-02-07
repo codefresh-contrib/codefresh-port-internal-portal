@@ -1,0 +1,84 @@
+{
+    "identifier": "environment",
+    "description": "Environment",
+    "title": "Environment",
+    "icon": "Pulumi",
+    "schema": {
+      "properties": {
+        "kind": {
+          "icon": "DefaultProperty",
+          "title": "Kind",
+          "description": "The kind of Environment. The tier",
+          "type": "string",
+          "default": "Dev",
+          "enum": [
+            "Dev",
+            "Staging",
+            "Production"
+          ],
+          "enumColors": {
+            "Dev": "lightGray",
+            "Staging": "turquoise",
+            "Production": "green"
+          }
+        },
+        "cf_deployment_build": {
+          "icon": "Codefresh",
+          "title": "CF Deployment Build",
+          "description": "The build that deployed the selected Image in this Environment",
+          "type": "string",
+          "format": "url"
+        },
+        "cf_deployment_build_status": {
+          "icon": "Codefresh",
+          "title": "CF Deployment Build Status",
+          "description": "Codefresh Deployment Build Status",
+          "type": "string",
+          "enum": [
+            "success",
+            "error",
+            "failure",
+            "running"
+          ],
+          "enumColors": {
+            "success": "green",
+            "error": "red",
+            "failure": "red",
+            "running": "turquoise"
+          }
+        },
+        "last_deployment_timestamp": {
+          "icon": "Clock",
+          "title": "Last Deployment timestamp",
+          "description": "CF Deployment Build timestamp",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "mirrorProperties": {
+      "created_at": {
+        "path": "image_deployed.created_at"
+      }
+    },
+    "calculationProperties": {},
+    "aggregationProperties": {},
+    "relations": {
+      "image_deployed": {
+        "title": "Image Deployed",
+        "description": "Container Image Deployed in this Environment.",
+        "target": "image",
+        "required": false,
+        "many": false
+      },
+      "product": {
+        "title": "Product",
+        "target": "product",
+        "required": true,
+        "many": false
+      }
+    }
+  }

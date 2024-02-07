@@ -1,0 +1,47 @@
+[
+  {
+    "identifier": "vz_environment_deploy_image",
+    "title": "Deploy an Image to this Env",
+    "icon": "Codefresh",
+    "userInputs": {
+      "properties": {
+        "cf_pipeline": {
+          "icon": "Codefresh",
+          "title": "CF Pipeline",
+          "description": "Codefresh Pipeline to trigger",
+          "type": "string",
+          "default": "port-idp/my_promote_pipeline",
+          "enum": [
+            "port-idp/my_promote_pipeline",
+            "64ed0bc7c64d3336272d6c51"
+          ],
+          "enumColors": {
+            "port-idp/my_promote_pipeline": "green",
+            "64ed0bc7c64d3336272d6c51": "green"
+          }
+        },
+        "image": {
+          "title": "Image",
+          "description": "The image to deploy to the selected environment",
+          "icon": "Package",
+          "type": "string",
+          "blueprint": "vz_image",
+          "format": "entity"
+        }
+      },
+      "required": [
+        "cf_pipeline"
+      ],
+      "order": [
+        "image",
+        "cf_pipeline"
+      ]
+    },
+    "invocationMethod": {
+      "type": "KAFKA"
+    },
+    "trigger": "DAY-2",
+    "description": "Select the Image to deploy to this Environment",
+    "requiredApproval": false
+  }
+]
