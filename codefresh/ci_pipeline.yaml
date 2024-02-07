@@ -1,0 +1,81 @@
+## Expects:
+## PORT_CLIENT_ID and PORT_CLIENT_SECRET
+
+version: "1.0"
+stages:
+    - "init"
+    - "build"
+    - "test"
+
+hooks:
+    on_success:
+        steps:
+            export_build_status:
+                image: codefresh/cli
+                commands:
+                    - cf_export BUILD_STATUS=success
+    on_fail:
+        steps:
+            export_build_status:
+                image: codefresh/cli
+                commands:
+                    - cf_export BUILD_STATUS=error
+    on_finish:
+        steps:
+            generate_vars_for_port:
+                image: codefresh/cli
+                shell: bash
+                commands:
+                    - cf_export BUILD_TIMESTAMP="`codefresh get build ${{CF_BUILD_ID}} -o json | jq -r .started`"
+                    - cf_export BUILDS_FILTER_URL="`echo "${{CF_URL}}/builds2?filter=page:1;repository:${{CF_REPO_NAME}};branch:${{CF_BRANCH}}"`"
+            report_entity_instance:
+                image: public.ecr.aws/y8q1v8m0/codefresh-port-entity:1.1.0
+                working_directory: IMAGE_WORK_DIR
+                environment:
+                    - OPERATION=upsert
+                    - BLUEPRINT_IDENTIFIER=vz_image
+                    - ENTITY_IDENTIFIER=image_${{SERVICE_NAME}}-${{SERVICE_VERSION}}
+                    - ENTITY_TITLE=Image ${{SERVICE_NAME}}-${{SERVICE_VERSION}}
+                    - ENTITY_PROPERTIES={"image_branch":"${{CF_BRANCH}}", "builds_for_git_repo_and_branch":"${{BUILDS_FILTER_URL}}", "codefresh_build":"${{CF_BUILD_URL}}", "codefresh_build_result":"${{BUILD_STATUS}}", "created_at":"${{BUILD_TIMESTAMP}}"}
+                volumes:
+                    - ./portvars/:/tmp/portvars/
+            get_variables:
+                image: codefresh/cli
+                shell: bash
+                commands:
+                    - ls -alh ./portvars/
+                    - cat ./portvars/*
+
+steps:
+    clone:
+        title: "Cloning repository"
+        type: "git-clone"
+        repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+        revision: ${{CF_REVISION}}
+        stage: "init"
+
+    export_variables:
+        title: "Exporting Pipeline Variables"
+        image: mikefarah/yq
+        working_directory: "${{clone}}"
+        commands:
+            - cf_export SERVICE_NAME="`yq -r .name service.yaml`"
+            - cf_export SERVICE_VERSION="`yq -r .version service.yaml`"
+        stage: "init"
+
+    build:
+        title: "Building Docker image"
+        type: "build"
+        image_name: "franciscodefresh/${{SERVICE_NAME}}"
+        working_directory: "${{clone}}"
+        tag: "${{SERVICE_VERSION}}"
+        dockerfile: "Dockerfile"
+        disable_push: true
+        on_success:
+            annotations:
+                set:
+                    - annotations:
+                          - image_name: "${{SERVICE_NAME}}"
+                          - image_version: "${{SERVICE_VERSION}}"
+                      display: image_version
+        stage: "build"
