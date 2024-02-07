@@ -33,7 +33,7 @@ hooks:
                 working_directory: IMAGE_WORK_DIR
                 environment:
                     - OPERATION=upsert
-                    - BLUEPRINT_IDENTIFIER=vz_image
+                    - BLUEPRINT_IDENTIFIER=image
                     - ENTITY_IDENTIFIER=image_${{SERVICE_NAME}}-${{SERVICE_VERSION}}
                     - ENTITY_TITLE=Image ${{SERVICE_NAME}}-${{SERVICE_VERSION}}
                     - ENTITY_PROPERTIES={"image_branch":"${{CF_BRANCH}}", "builds_for_git_repo_and_branch":"${{BUILDS_FILTER_URL}}", "codefresh_build":"${{CF_BUILD_URL}}", "codefresh_build_result":"${{BUILD_STATUS}}", "created_at":"${{BUILD_TIMESTAMP}}"}
