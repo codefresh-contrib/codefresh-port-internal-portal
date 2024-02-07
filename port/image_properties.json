@@ -1,0 +1,61 @@
+{
+    "identifier": "image",
+    "description": "Container Image",
+    "title": "Image",
+    "icon": "Package",
+    "schema": {
+      "properties": {
+        "image_branch": {
+          "icon": "GitPullRequest",
+          "title": "Image branch",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 200
+        },
+        "codefresh_build": {
+          "title": "Codefresh Build",
+          "description": "Codefresh Build URL",
+          "icon": "Codefresh",
+          "type": "string",
+          "format": "url"
+        },
+        "codefresh_build_result": {
+          "icon": "Codefresh",
+          "title": "Codefresh Build Result",
+          "description": "Codefresh Build Result",
+          "type": "string",
+          "enum": [
+            "success",
+            "error",
+            "failure",
+            "running"
+          ],
+          "enumColors": {
+            "success": "green",
+            "error": "red",
+            "failure": "red",
+            "running": "blue"
+          }
+        },
+        "created_at": {
+          "title": "Created at",
+          "description": "CF Build Start Time",
+          "icon": "Clock",
+          "type": "string",
+          "format": "date-time"
+        },
+        "builds_for_git_repo_and_branch": {
+          "icon": "Server",
+          "title": "Builds for Git Repo and Branch",
+          "description": "Builds associated to the Git Repo for this Image",
+          "type": "string",
+          "format": "url"
+        }
+      },
+      "required": []
+    },
+    "mirrorProperties": {},
+    "calculationProperties": {},
+    "aggregationProperties": {},
+    "relations": {}
+  }
