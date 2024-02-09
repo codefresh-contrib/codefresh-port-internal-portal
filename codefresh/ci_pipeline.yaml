@@ -26,8 +26,21 @@ hooks:
                 image: codefresh/cli
                 shell: bash
                 commands:
-                    - cf_export BUILD_TIMESTAMP="`codefresh get build ${{CF_BUILD_ID}} -o json | jq -r .started`"
-                    - cf_export BUILDS_FILTER_URL="`echo "${{CF_URL}}/builds2?filter=page:1;repository:${{CF_REPO_NAME}};branch:${{CF_BRANCH}}"`"
+                    - |
+                      #!/usr/bin/env bash
+                      set -euo pipefail
+                      IFS=$'\n\t'
+                      export BUILD_TIMESTAMP="`codefresh get build ${{CF_BUILD_ID}} -o json | jq -r .started`"
+                      export BUILDS_FILTER_URL="`echo "${{CF_URL}}/builds2?filter=page:1;repository:${{CF_REPO_NAME}};branch:${{CF_BRANCH}}"`"
+
+                      export JSON_PAYLOAD='{"image_branch":"${{CF_BRANCH}}", "builds_for_git_repo_and_branch":"TO BE DEFINED", "codefresh_build":"${{CF_BUILD_URL}}", "codefresh_build_result":"${{BUILD_STATUS}}", "created_at":"TO BE DEFINED"}'
+
+                      cf_export IMAGE_ENTITY_PROPERTIES=$(jq -r -c \
+                          --arg BUILD_TIMESTAMP $BUILD_TIMESTAMP \
+                          --arg BUILDS_FILTER_URL $BUILDS_FILTER_URL \
+                          '.builds_for_git_repo_and_branch = $BUILDS_FILTER_URL | .created_at = $BUILD_TIMESTAMP' \
+                          <<< "$JSON_PAYLOAD")
+            
             report_entity_instance:
                 image: public.ecr.aws/y8q1v8m0/codefresh-port-entity:1.1.0
                 working_directory: IMAGE_WORK_DIR
@@ -35,16 +48,16 @@ hooks:
                     - OPERATION=upsert
                     - BLUEPRINT_IDENTIFIER=image
                     - ENTITY_IDENTIFIER=image_${{SERVICE_NAME}}-${{SERVICE_VERSION}}
-                    - ENTITY_TITLE=Image ${{SERVICE_NAME}}-${{SERVICE_VERSION}}
-                    - ENTITY_PROPERTIES={"image_branch":"${{CF_BRANCH}}", "builds_for_git_repo_and_branch":"${{BUILDS_FILTER_URL}}", "codefresh_build":"${{CF_BUILD_URL}}", "codefresh_build_result":"${{BUILD_STATUS}}", "created_at":"${{BUILD_TIMESTAMP}}"}
-                volumes:
-                    - ./portvars/:/tmp/portvars/
-            get_variables:
-                image: codefresh/cli
-                shell: bash
-                commands:
-                    - ls -alh ./portvars/
-                    - cat ./portvars/*
+                    - ENTITY_TITLE=${{SERVICE_NAME}}:${{SERVICE_VERSION}}
+                    - ENTITY_PROPERTIES=${{IMAGE_ENTITY_PROPERTIES}}
+            #     volumes:
+            #         - ./portvars/:/tmp/portvars/
+            # get_variables:
+            #     image: codefresh/cli
+            #     shell: bash
+            #     commands:
+            #         - ls -alh ./portvars/
+            #         - cat ./portvars/*
 
 steps:
     clone:
