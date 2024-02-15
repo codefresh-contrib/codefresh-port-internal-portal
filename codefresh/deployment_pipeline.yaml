@@ -1,0 +1,125 @@
+## Expects:
+## PORT_CLIENT_ID and PORT_CLIENT_SECRET
+
+version: "1.0"
+stages:
+  - "clone"
+  - "deploy"
+  - "test"
+
+hooks:
+  on_success:
+    steps:
+      export_build_status:
+        image: ubuntu
+        commands:
+          - cf_export CF_BUILD_STATUS=success
+  on_fail:
+    steps:
+      export_build_status:
+        image: ubuntu
+        commands:
+          - cf_export CF_BUILD_STATUS=failure
+  on_finish:
+    steps:
+      get_build_time:
+        image: codefresh/cli
+        commands:
+          - cf_export BUILD_TIMESTAMP="`codefresh get build ${{CF_BUILD_ID}} -o json | jq -r .started`"
+
+      report_environment_update_to_port:
+        image: public.ecr.aws/y8q1v8m0/codefresh-port-entity:1.1.0
+        working_directory: IMAGE_WORK_DIR
+        environment:
+          - OPERATION=upsert
+          - BLUEPRINT_IDENTIFIER=vz_environment
+          - ENTITY_IDENTIFIER=${{TARGET_ENVIRONMENT_ID}}
+          - ENTITY_PROPERTIES={"cf_deployment_build":"${{CF_BUILD_URL}}","cf_deployment_build_status":"${{CF_BUILD_STATUS}}", "last_deployment_timestamp":"${{BUILD_TIMESTAMP}}"}
+          - ENTITY_RELATIONS={"image_deployed":"${{IMAGE_VERSION_ID}}"}
+        volumes:
+          - ./portvars/:/tmp/portvars/
+
+      report_run_status_to_port:
+        title: "Reporting Run status to Port"
+        image: python:3.9-slim
+        shell: bash
+        commands:
+          - apt-get update && apt-get install curl -y > /dev/null
+          - pip install requests > /dev/null
+          - printenv
+          - curl -s -o report_run_status.py "https://gist.githubusercontent.com/francisco-cocozza/1fddd774e50ac395adbda07fd0ed09f0/raw/ed051749c44f68149bb697c917e2afb05ce9b224/report_run_statyus.py"
+          - python report_run_status.py
+        environment:
+          - PORT_RUN_ID=${{PORT_RUN_ID}}
+          - PORT_RUN_SUMMARY=The Codefresh Build finished
+          #- PORT_RUN_SUMMARY=The image '${{IMAGE_VERSION_ID}}' was successfully deployed to '${{TARGET_ENVIRONMENT_TITLE}}'
+          - CF_BUILD_STATUS=${{CF_BUILD_STATUS}}
+
+      export_port_variables:
+        image: codefresh/cli
+        commands:
+          - |+
+            cf_export PORT_ENTITY_IDENTIFIER=$(jq -r . ./portvars/PORT_ENTITY_IDENTIFIER)
+
+steps:
+  clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "https://github.com/codefresh-io/cli/"
+    revision: "master"
+    depth: 1
+    stage: "clone"
+
+  extract_vars_from_port_payload:
+    type: "freestyle"
+    image: "codefresh/cli"
+    shell: bash
+    working_directory: "${{clone}}"
+    commands:
+      - "printenv"
+      - |+
+        export PORT_PAYLOAD=$port_payload
+        export ENTITY_BLUEPRINT="`jq -r .payload.entity.blueprint <<< ${PORT_PAYLOAD}`"
+        export IMAGE_VERSION_ID_PATH='.payload.properties.image'
+        export TARGET_ENVIRONMENT_ID_PATH='.payload.entity.identifier'
+        export TARGET_ENVIRONMENT_TITLE_PATH='.payload.entity.title'
+        export TARGET_ENVIRONMENT_BLUEPRINT_PATH='.payload.entity.blueprint'
+        if [[ "$ENTITY_BLUEPRINT" == "vz_image" ]] ; then 
+          export IMAGE_VERSION_ID_PATH='.payload.entity.identifier'
+          export TARGET_ENVIRONMENT_ID_PATH='.payload.properties.environment_target'
+          export TARGET_ENVIRONMENT_TITLE_PATH='.payload.properties.environment_target'
+          export TARGET_ENVIRONMENT_BLUEPRINT_PATH='.payload.entity.blueprint' ## this is wrong. We need to agree on a solution
+        fi
+        cf_export IMAGE_VERSION_ID="`jq             -r $IMAGE_VERSION_ID_PATH <<< ${PORT_PAYLOAD}`"
+        cf_export TARGET_ENVIRONMENT_ID="`jq        -r $TARGET_ENVIRONMENT_ID_PATH <<< ${PORT_PAYLOAD}`"
+        cf_export TARGET_ENVIRONMENT_TITLE="`jq     -r $TARGET_ENVIRONMENT_TITLE_PATH <<< ${PORT_PAYLOAD}`"
+        cf_export TARGET_ENVIRONMENT_BLUEPRINT="`jq -r $TARGET_ENVIRONMENT_BLUEPRINT_PATH <<< ${PORT_PAYLOAD}`"
+        cf_export PORT_RUN_ID="`jq                  -r .context.runId <<< ${port_payload}`"
+    stage: "clone"
+
+  deploy:
+    title: "Deploying Image"
+    image: "ubuntu:latest"
+    working_directory: "${{clone}}"
+    commands:
+      - echo "Deploying the Image. Details:"
+      - echo IMAGE_VERSION_ID  $IMAGE_VERSION_ID
+      - echo TARGET_ENVIRONMENT_ID $TARGET_ENVIRONMENT_ID
+      - echo TARGET_ENVIRONMENT_TITLE $TARGET_ENVIRONMENT_TITLE
+      - echo TARGET_ENVIRONMENT_BLUEPRINT $TARGET_ENVIRONMENT_BLUEPRINT
+    stage: "deploy"
+
+  test:
+    title: "Running test"
+    image: "ubuntu:latest"
+    working_directory: "${{clone}}"
+    commands:
+      - echo "Testing the deployment..."
+    on_success:
+      annotations:
+        set:
+          - annotations:
+              - env: "${{TARGET_ENVIRONMENT_ID}}"
+              - image_version: "${{IMAGE_VERSION_ID}}"
+            display: package_version
+    stage: "test"
