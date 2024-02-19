@@ -1,2 +1,2 @@
-# from_bamboo_to_codefresh
-Demo repo with the required resources to migrate from Bamboo to Codefresh
+# Transitioning from Atlassian Bamboo to Codefresh
+Sample repo with the required resources to migrate from Bamboo to Codefresh
