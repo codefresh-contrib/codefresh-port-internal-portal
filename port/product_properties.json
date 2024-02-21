@@ -1,14 +1,14 @@
 {
-    "identifier": "product",
-    "description": "Product",
-    "title": "Product",
-    "icon": "Swagger",
-    "schema": {
-      "properties": {},
-      "required": []
-    },
-    "mirrorProperties": {},
-    "calculationProperties": {},
-    "aggregationProperties": {},
-    "relations": {}
-  }
+  "identifier": "product",
+  "description": "Product",
+  "title": "Product",
+  "icon": "Swagger",
+  "schema": {
+    "properties": {},
+    "required": []
+  },
+  "mirrorProperties": {},
+  "calculationProperties": {},
+  "aggregationProperties": {},
+  "relations": {}
+}

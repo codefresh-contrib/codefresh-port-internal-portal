@@ -1,16 +1,16 @@
 [
   {
     "identifier": "deploy_this_image_to_an_env",
-    "title": "Deploy this Image to an Env",
+    "title": "Deploy this Image to an Environment",
     "icon": "Codefresh",
     "userInputs": {
       "properties": {
         "environment_target": {
+          "icon": "DeployedAt",
           "title": "Environment Target",
           "description": "The Environment to deploy this image to",
-          "icon": "DeployedAt",
           "type": "string",
-          "blueprint": "vz_environment",
+          "blueprint": "environment",
           "format": "entity"
         },
         "cf_pipeline": {
@@ -18,13 +18,13 @@
           "title": "CF Pipeline",
           "description": "Codefresh Pipeline to trigger",
           "type": "string",
-          "default": "port-idp/my_promote_pipeline",
+          "default": "acme/deploy_pipeline",
           "enum": [
-            "port-idp/my_promote_pipeline",
+            "acme/deploy_pipeline",
             "64ed0bc7c64d3336272d6c51"
           ],
           "enumColors": {
-            "port-idp/my_promote_pipeline": "green",
+            "acme/deploy_pipeline": "green",
             "64ed0bc7c64d3336272d6c51": "green"
           }
         }
