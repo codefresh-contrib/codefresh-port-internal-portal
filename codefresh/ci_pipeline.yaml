@@ -50,14 +50,6 @@ hooks:
                     - ENTITY_IDENTIFIER=image_${{SERVICE_NAME}}-${{SERVICE_VERSION}}
                     - ENTITY_TITLE=${{SERVICE_NAME}}:${{SERVICE_VERSION}}
                     - ENTITY_PROPERTIES=${{IMAGE_ENTITY_PROPERTIES}}
-            #     volumes:
-            #         - ./portvars/:/tmp/portvars/
-            # get_variables:
-            #     image: codefresh/cli
-            #     shell: bash
-            #     commands:
-            #         - ls -alh ./portvars/
-            #         - cat ./portvars/*
 
 steps:
     clone:
